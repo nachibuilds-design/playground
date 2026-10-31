@@ -1,0 +1,316 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Happy Timer</title>
+<link href="https://fonts.googleapis.com/css2?family=Fredoka:wght@400;500;600;700&display=swap" rel="stylesheet">
+<style>
+:root{
+  --sky1:#fde2f3; --sky2:#e0ecff; --sky3:#e6fff4;
+  --ink:#3b2f5c; --soft:#7a6aa6; --card:#ffffffcc;
+  --pink:#ff8fc7; --peach:#ffb38a; --mint:#7fe0c0; --lav:#b9a6ff; --sun:#ffd66b;
+  --ring-bg:#f1e9ff;
+}
+*{box-sizing:border-box;margin:0;padding:0}
+html,body{height:100%}
+body{
+  font-family:"Fredoka",system-ui,sans-serif;color:var(--ink);
+  background:linear-gradient(135deg,var(--sky1),var(--sky2) 55%,var(--sky3));
+  background-size:200% 200%;animation:skyshift 18s ease-in-out infinite;
+  display:flex;align-items:center;justify-content:center;overflow:hidden;user-select:none;
+}
+@keyframes skyshift{0%,100%{background-position:0% 50%}50%{background-position:100% 50%}}
+
+/* floating bubbles in the background */
+.float{position:fixed;z-index:0;border-radius:50%;opacity:.45;filter:blur(1px);animation:rise linear infinite;pointer-events:none}
+@keyframes rise{from{transform:translateY(110vh) scale(.8)}to{transform:translateY(-20vh) scale(1.1)}}
+
+.card{
+  position:relative;z-index:1;width:min(760px,94vw);padding:22px 26px 26px;border-radius:36px;
+  background:var(--card);backdrop-filter:blur(10px);
+  box-shadow:0 20px 60px #b9a6ff40,0 2px 0 #fff inset;
+}
+.top{display:flex;align-items:center;gap:10px}
+.tab{border:0;cursor:pointer;font:600 17px "Fredoka";color:var(--soft);background:transparent;padding:10px 18px;border-radius:999px;transition:.2s}
+.tab.on{background:linear-gradient(135deg,var(--pink),var(--lav));color:#fff;box-shadow:0 6px 16px #ff8fc760}
+.spacer{flex:1}
+.icon{border:0;cursor:pointer;background:#fff;width:42px;height:42px;border-radius:50%;font-size:19px;box-shadow:0 4px 12px #b9a6ff30;transition:.2s}
+.icon:hover{transform:scale(1.08) rotate(-6deg)}
+
+.stage{display:flex;align-items:center;justify-content:center;gap:34px;margin:18px 0 8px;flex-wrap:wrap}
+
+/* progress ring + time */
+.ringwrap{position:relative;width:300px;height:300px}
+.ringwrap svg{width:100%;height:100%;transform:rotate(-90deg)}
+.ring-bg{fill:none;stroke:var(--ring-bg);stroke-width:18}
+.ring{fill:none;stroke:url(#grad);stroke-width:18;stroke-linecap:round;transition:stroke-dashoffset .25s linear}
+.time{
+  position:absolute;inset:0;display:flex;flex-direction:column;align-items:center;justify-content:center;
+}
+.digits{font-size:76px;font-weight:600;letter-spacing:1px;cursor:text;outline:none;border-radius:16px;padding:0 10px;font-variant-numeric:tabular-nums}
+.digits:focus{background:#fff;box-shadow:0 0 0 3px var(--lav)}
+.hint{font-size:14px;color:var(--soft);margin-top:2px}
+
+/* mascot */
+.mascot{width:190px;height:190px;position:relative;animation:idle 3s ease-in-out infinite}
+.running .mascot{animation:bounce .9s ease-in-out infinite}
+.hurry .mascot{animation:wiggle .35s ease-in-out infinite}
+.done .mascot{animation:party .6s ease-in-out infinite}
+@keyframes idle{0%,100%{transform:translateY(0)}50%{transform:translateY(-8px)}}
+@keyframes bounce{0%,100%{transform:translateY(0) scale(1,1)}40%{transform:translateY(-22px) scale(.96,1.05)}80%{transform:translateY(0) scale(1.06,.94)}}
+@keyframes wiggle{0%,100%{transform:rotate(-5deg)}50%{transform:rotate(5deg)}}
+@keyframes party{0%,100%{transform:translateY(0) rotate(-8deg)}50%{transform:translateY(-26px) rotate(8deg)}}
+.body{position:absolute;inset:10px;border-radius:50% 50% 46% 46%;background:radial-gradient(ellipse 9% 6% at 28% 24%,#ffffffd0 0 98%,transparent 100%),linear-gradient(160deg,#ffc2e2,var(--pink));box-shadow:0 14px 30px #ff8fc760, inset -10px -14px 0 #ff6fb522}
+.eye{position:absolute;top:70px;width:18px;height:24px;background:var(--ink);border-radius:50%;animation:blink 4s infinite}
+.eye::after{content:"";position:absolute;top:4px;left:4px;width:6px;height:6px;background:#fff;border-radius:50%}
+.eye.l{left:58px}.eye.r{right:58px}
+@keyframes blink{0%,94%,100%{transform:scaleY(1)}96%{transform:scaleY(.1)}}
+.done .eye{height:12px;top:78px;border-radius:12px 12px 0 0;background:transparent;border:5px solid var(--ink);border-bottom:0;animation:none}
+.done .eye::after{display:none}
+.cheek{position:absolute;top:100px;width:24px;height:14px;background:#ff6fa8;opacity:.55;border-radius:50%}
+.cheek.l{left:36px}.cheek.r{right:36px}
+.mouth{position:absolute;left:50%;top:104px;width:34px;height:17px;transform:translateX(-50%);border:5px solid var(--ink);border-top:0;border-radius:0 0 34px 34px}
+.hurry .mouth{width:22px;height:22px;border:5px solid var(--ink);border-radius:50%;top:102px}
+.done .mouth{width:44px;height:26px;background:var(--ink);border:0;border-radius:0 0 44px 44px}
+.sweat{position:absolute;right:30px;top:40px;width:14px;height:20px;background:#8fd3ff;border-radius:50% 50% 50% 50%/60% 60% 40% 40%;opacity:0;transition:.3s}
+.hurry .sweat{opacity:1;animation:drip 1s ease-in infinite}
+@keyframes drip{from{transform:translateY(0)}to{transform:translateY(14px);opacity:0}}
+.sprout{position:absolute;left:50%;top:-6px;transform:translateX(-50%);font-size:30px;animation:sway 2.4s ease-in-out infinite;transform-origin:bottom center}
+@keyframes sway{0%,100%{transform:translateX(-50%) rotate(-10deg)}50%{transform:translateX(-50%) rotate(10deg)}}
+
+.msg{text-align:center;font-size:22px;font-weight:500;color:var(--soft);min-height:32px;margin:4px 0 14px;transition:opacity .4s}
+
+.chips{display:flex;justify-content:center;gap:10px;flex-wrap:wrap;margin-bottom:18px}
+.chip{border:0;cursor:pointer;font:500 16px "Fredoka";color:var(--ink);background:#fff;padding:9px 16px;border-radius:999px;box-shadow:0 4px 10px #b9a6ff2a;transition:.15s}
+.chip:hover{transform:translateY(-2px);background:#fff4fb}
+.chip.add{background:#f4efff}
+
+.controls{display:flex;gap:12px}
+.go{flex:1;border:0;cursor:pointer;height:64px;border-radius:999px;font:600 24px "Fredoka";color:#fff;
+  background:linear-gradient(135deg,var(--pink),var(--peach));box-shadow:0 10px 24px #ff8fc770;transition:.15s}
+.go:hover{transform:translateY(-2px)}
+.go:active{transform:scale(.98)}
+.go.pause{background:linear-gradient(135deg,var(--lav),#8fb8ff)}
+.reset{border:0;cursor:pointer;width:64px;height:64px;border-radius:50%;background:#fff;font-size:26px;box-shadow:0 6px 16px #b9a6ff30;transition:.3s}
+.reset:hover{transform:rotate(-180deg)}
+
+.keys{text-align:center;font-size:13px;color:var(--soft);margin-top:12px;opacity:.8}
+canvas#confetti{position:fixed;inset:0;pointer-events:none;z-index:9}
+
+/* fullscreen: everything bigger for the projector */
+:fullscreen .card{width:min(1100px,96vw);padding:34px 40px}
+:fullscreen .ringwrap{width:440px;height:440px}
+:fullscreen .digits{font-size:116px}
+:fullscreen .mascot{width:250px;height:250px}
+:fullscreen .msg{font-size:30px}
+@media (max-width:640px){.ringwrap{width:240px;height:240px}.digits{font-size:58px}.mascot{width:150px;height:150px;transform:scale(.8)}}
+</style>
+</head>
+<body>
+<canvas id="confetti"></canvas>
+
+<div class="card" id="app">
+  <div class="top">
+    <button class="tab on" data-mode="timer">⏳ Timer</button>
+    <button class="tab" data-mode="stopwatch">⏱️ Stopwatch</button>
+    <div class="spacer"></div>
+    <button class="icon" id="sound" title="Sound on/off">🔔</button>
+    <button class="icon" id="full" title="Fullscreen (F)">⛶</button>
+  </div>
+
+  <div class="stage">
+    <div class="mascot" aria-hidden="true">
+      <div class="body"></div>
+      <div class="sprout">🌱</div>
+      <div class="eye l"></div><div class="eye r"></div>
+      <div class="cheek l"></div><div class="cheek r"></div>
+      <div class="mouth"></div>
+      <div class="sweat"></div>
+    </div>
+    <div class="ringwrap">
+      <svg viewBox="0 0 200 200">
+        <defs><linearGradient id="grad" x1="0" y1="0" x2="1" y2="1">
+          <stop offset="0%" stop-color="#ff8fc7"/><stop offset="50%" stop-color="#b9a6ff"/><stop offset="100%" stop-color="#7fe0c0"/>
+        </linearGradient></defs>
+        <circle class="ring-bg" cx="100" cy="100" r="88"/>
+        <circle class="ring" id="ring" cx="100" cy="100" r="88"/>
+      </svg>
+      <div class="time">
+        <div class="digits" id="digits" contenteditable="true" spellcheck="false">05:00</div>
+        <div class="hint" id="hint">tap to type a time</div>
+      </div>
+    </div>
+  </div>
+
+  <div class="msg" id="msg">Ready when you are ✨</div>
+
+  <div class="chips" id="chips">
+    <button class="chip" data-set="60">1 min</button>
+    <button class="chip" data-set="300">5 min</button>
+    <button class="chip" data-set="600">10 min</button>
+    <button class="chip" data-set="900">15 min</button>
+    <button class="chip" data-set="1800">30 min</button>
+    <button class="chip add" data-add="30">+0:30</button>
+    <button class="chip add" data-add="60">+1:00</button>
+    <button class="chip add" data-add="300">+5:00</button>
+  </div>
+
+  <div class="controls">
+    <button class="go" id="go">▶ Start</button>
+    <button class="reset" id="reset" title="Reset (R)">↺</button>
+  </div>
+  <div class="keys">Space = start / pause · R = reset · F = fullscreen</div>
+</div>
+
+<script>
+const $ = s => document.querySelector(s);
+const app = $("#app"), digits = $("#digits"), ring = $("#ring"), msg = $("#msg"), go = $("#go"), hint = $("#hint");
+const C = 2 * Math.PI * 88; ring.style.strokeDasharray = C;
+
+let mode = "timer", total = 300, left = 300, elapsed = 0, running = false, last = 0, raf = 0, soundOn = true, msgTimer = 0;
+
+const cheer = ["You're doing great! 💖", "Keep going, superstar 🌟", "Focus mode: ON 🧠", "Little steps, big wins 🐾",
+  "Sip some water 🥤", "You've got this! 💪", "Learning looks good on you 🌷", "Almost a pro already 🎓"];
+const hurry = ["Almost there! 🏃", "Final stretch! ⚡", "Wrap it up nicely 🎀"];
+const yay = ["Time's up! 🎉 Great job!", "Done! Give yourselves a clap 👏", "Woohoo! All done 🥳"];
+const pick = a => a[Math.floor(Math.random() * a.length)];
+
+function fmt(sec) {
+  sec = Math.max(0, Math.ceil(sec));
+  const h = Math.floor(sec / 3600), m = Math.floor(sec % 3600 / 60), s = sec % 60;
+  const mm = String(m).padStart(2, "0"), ss = String(s).padStart(2, "0");
+  return h ? `${h}:${mm}:${ss}` : `${mm}:${ss}`;
+}
+function parse(txt) {
+  const p = txt.replace(/[^\d:]/g, "").split(":").filter(x => x !== "").map(Number);
+  if (!p.length) return null;
+  if (p.length === 1) return p[0] * 60;            // "10" = 10 minutes
+  return p.reduce((a, v) => a * 60 + v, 0);
+}
+function setMood() {
+  app.classList.toggle("running", running);
+  app.classList.toggle("hurry", running && mode === "timer" && left <= 60 && left > 0);
+}
+function render() {
+  if (mode === "timer") {
+    if (document.activeElement !== digits) digits.textContent = fmt(left);
+    ring.style.strokeDashoffset = total ? C * (1 - left / total) : 0;
+  } else {
+    digits.textContent = fmt(elapsed);
+    ring.style.strokeDashoffset = C * (1 - (elapsed % 60) / 60);
+  }
+  document.title = (running ? fmt(mode === "timer" ? left : elapsed) + " · " : "") + "Happy Timer";
+  setMood();
+}
+function say(t) { msg.style.opacity = 0; setTimeout(() => { msg.textContent = t; msg.style.opacity = 1; }, 200); }
+
+function tick(now) {
+  const dt = (now - last) / 1000; last = now;
+  if (mode === "timer") {
+    const before = left; left -= dt;
+    if (before > 60 && left <= 60) say(pick(hurry));
+    if (left <= 0) { left = 0; finish(); return; }
+  } else elapsed += dt;
+  render(); raf = requestAnimationFrame(tick);
+}
+function start() {
+  if (mode === "timer" && left <= 0) return;
+  running = true; app.classList.remove("done"); last = performance.now();
+  go.textContent = "❚❚ Pause"; go.classList.add("pause"); hint.textContent = "";
+  say(pick(cheer)); clearInterval(msgTimer);
+  msgTimer = setInterval(() => { if (running && !(mode === "timer" && left <= 60)) say(pick(cheer)); }, 45000);
+  raf = requestAnimationFrame(tick);
+}
+function pause() {
+  running = false; cancelAnimationFrame(raf); clearInterval(msgTimer);
+  go.textContent = "▶ Resume"; go.classList.remove("pause"); say("Taking a breather ☁️"); render();
+}
+function reset() {
+  running = false; cancelAnimationFrame(raf); clearInterval(msgTimer); app.classList.remove("done");
+  left = total; elapsed = 0; go.textContent = "▶ Start"; go.classList.remove("pause");
+  hint.textContent = mode === "timer" ? "tap to type a time" : ""; say("Ready when you are ✨"); render();
+}
+function finish() {
+  running = false; cancelAnimationFrame(raf); clearInterval(msgTimer);
+  go.textContent = "▶ Start"; go.classList.remove("pause");
+  app.classList.add("done"); render(); say(pick(yay)); chime(); confetti();
+}
+
+// ---------- sound: a soft music-box chime, no files needed
+let actx;
+function chime() {
+  if (!soundOn) return;
+  actx = actx || new (window.AudioContext || window.webkitAudioContext)();
+  const notes = [523.25, 659.25, 783.99, 1046.5, 783.99, 1046.5];
+  notes.forEach((f, i) => {
+    const o = actx.createOscillator(), g = actx.createGain(), t = actx.currentTime + i * 0.16;
+    o.type = "triangle"; o.frequency.value = f;
+    g.gain.setValueAtTime(0, t); g.gain.linearRampToValueAtTime(0.25, t + 0.02); g.gain.exponentialRampToValueAtTime(0.001, t + 0.9);
+    o.connect(g).connect(actx.destination); o.start(t); o.stop(t + 1);
+  });
+}
+
+// ---------- confetti
+const cv = $("#confetti"), cx = cv.getContext("2d");
+function confetti() {
+  cv.width = innerWidth; cv.height = innerHeight;
+  const cols = ["#ff8fc7", "#b9a6ff", "#7fe0c0", "#ffd66b", "#ffb38a", "#8fd3ff"];
+  const bits = Array.from({ length: 180 }, () => ({
+    x: cv.width / 2 + (Math.random() - .5) * 200, y: cv.height * .45,
+    vx: (Math.random() - .5) * 16, vy: -Math.random() * 16 - 6, r: Math.random() * 6 + 4,
+    c: cols[Math.floor(Math.random() * cols.length)], a: Math.random() * 6, s: Math.random() < .3 ? "heart" : "dot"
+  }));
+  let n = 0;
+  (function draw() {
+    cx.clearRect(0, 0, cv.width, cv.height);
+    bits.forEach(b => {
+      b.vy += .35; b.x += b.vx; b.y += b.vy; b.vx *= .99; b.a += .1;
+      cx.fillStyle = b.c; cx.save(); cx.translate(b.x, b.y); cx.rotate(b.a);
+      if (b.s === "heart") { cx.font = `${b.r * 3}px serif`; cx.fillText("♥", 0, 0); }
+      else cx.fillRect(-b.r / 2, -b.r / 2, b.r, b.r * 1.6);
+      cx.restore();
+    });
+    if (++n < 220) requestAnimationFrame(draw); else cx.clearRect(0, 0, cv.width, cv.height);
+  })();
+}
+
+// ---------- background bubbles
+const fc = ["#ff8fc7", "#b9a6ff", "#7fe0c0", "#ffd66b", "#8fd3ff"];
+for (let i = 0; i < 14; i++) {
+  const d = document.createElement("div"), sz = 20 + Math.random() * 70;
+  d.className = "float";
+  Object.assign(d.style, { width: sz + "px", height: sz + "px", left: Math.random() * 100 + "vw",
+    background: fc[i % fc.length], animationDuration: 14 + Math.random() * 18 + "s", animationDelay: -Math.random() * 30 + "s" });
+  document.body.appendChild(d);
+}
+
+// ---------- wiring
+go.onclick = () => running ? pause() : start();
+$("#reset").onclick = reset;
+document.querySelectorAll(".tab").forEach(t => t.onclick = () => {
+  document.querySelectorAll(".tab").forEach(x => x.classList.remove("on")); t.classList.add("on");
+  mode = t.dataset.mode; digits.contentEditable = mode === "timer";
+  $("#chips").style.visibility = mode === "timer" ? "visible" : "hidden"; reset();
+});
+document.querySelectorAll("[data-set]").forEach(b => b.onclick = () => { total = left = +b.dataset.set; reset(); });
+document.querySelectorAll("[data-add]").forEach(b => b.onclick = () => {
+  left += +b.dataset.add; total = Math.max(total, left); app.classList.remove("done"); render();
+});
+digits.addEventListener("focus", () => { if (running) pause(); });
+digits.addEventListener("keydown", e => { if (e.key === "Enter") { e.preventDefault(); digits.blur(); } e.stopPropagation(); });
+digits.addEventListener("blur", () => {
+  const v = parse(digits.textContent);
+  if (v) { total = left = v; } reset();
+});
+$("#sound").onclick = () => { soundOn = !soundOn; $("#sound").textContent = soundOn ? "🔔" : "🔕"; if (soundOn) chime(); };
+$("#full").onclick = () => document.fullscreenElement ? document.exitFullscreen() : document.documentElement.requestFullscreen();
+document.addEventListener("keydown", e => {
+  if (e.code === "Space") { e.preventDefault(); running ? pause() : start(); }
+  else if (e.key === "r" || e.key === "R") reset();
+  else if (e.key === "f" || e.key === "F") $("#full").click();
+});
+render();
+</script>
+</body>
+</html>
